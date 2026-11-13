@@ -3,23 +3,50 @@
 const Alexa = require('ask-sdk-core');
 const { getRequestType, getIntentName } = Alexa;
 
+const https = require('https');
+
 const STATIONS_URL =
   process.env.STATIONS_API_URL ||
-  'https://login.broadcasturself.com/BroadcastUrself/alexa/stations.php';
+  'https://broadcasturself.com/api/stations.php';
 
 const LIVE_ONLY = process.env.STATIONS_LIVE_ONLY !== '0';
+
+function httpsGetJson(urlString) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      urlString,
+      { headers: { 'User-Agent': 'BroadcastUrself-Alexa/1.0' } },
+      (res) => {
+        let body = '';
+        res.on('data', (chunk) => {
+          body += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            reject(new Error(`Stations API HTTP ${res.statusCode}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(body));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }
+    );
+    req.on('error', reject);
+    req.setTimeout(12000, () => {
+      req.destroy();
+      reject(new Error('Stations API timeout'));
+    });
+  });
+}
 
 async function fetchStations() {
   const url = LIVE_ONLY
     ? STATIONS_URL + (STATIONS_URL.includes('?') ? '&' : '?') + 'liveOnly=1'
     : STATIONS_URL;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'BroadcastUrself-Alexa/1.0' },
-  });
-  if (!res.ok) {
-    throw new Error(`Stations API HTTP ${res.status}`);
-  }
-  const data = await res.json();
+  const data = await httpsGetJson(url);
   if (!data.success || !Array.isArray(data.stations)) {
     throw new Error('Invalid stations payload');
   }
