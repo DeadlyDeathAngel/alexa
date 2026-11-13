@@ -7,9 +7,13 @@
           "name": "ListStationsIntent",
           "samples": [
             "list stations",
+            "stations",
             "what stations are on",
             "which stations are live",
-            "show stations"
+            "show stations",
+            "show me stations",
+            "what can I listen to",
+            "name the stations"
           ]
         },
         {
@@ -22,9 +26,13 @@
           ],
           "samples": [
             "play {StationName}",
+            "play station {StationName}",
             "listen to {StationName}",
             "start {StationName}",
-            "tune in to {StationName}"
+            "tune in to {StationName}",
+            "put on {StationName}",
+            "switch to {StationName}",
+            "{StationName}"
           ]
         },
         {
@@ -57,6 +65,10 @@
         },
         {
           "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
           "samples": []
         }
       ],

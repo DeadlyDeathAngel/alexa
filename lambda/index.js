@@ -99,6 +99,59 @@ function speak(text, ssml = false) {
     : text;
 }
 
+async function handlePlayStationByName(handlerInput, spoken) {
+  const name = String(spoken || '').trim();
+  if (!name) {
+    return handlerInput.responseBuilder
+      .speak('Which station should I play?')
+      .reprompt('Try saying play and the station name.')
+      .getResponse();
+  }
+  try {
+    const stations = await fetchStations();
+    const station = findStation(stations, name);
+    if (!station) {
+      return handlerInput.responseBuilder
+        .speak(
+          `I could not find a station matching ${name}. Say list stations to hear options.`
+        )
+        .reprompt('Which station would you like?')
+        .getResponse();
+    }
+    return audioPlayResponse(handlerInput, station);
+  } catch (err) {
+    console.error(err);
+    return handlerInput.responseBuilder
+      .speak('Something went wrong starting playback. Please try again.')
+      .getResponse();
+  }
+}
+
+function looksLikeListStations(text) {
+  const t = text.toLowerCase();
+  if (t === 'stations' || t === 'list stations' || t === 'show stations') {
+    return true;
+  }
+  return (
+    (/\b(list|show|name|tell)\b/.test(t) && /\bstation/.test(t)) ||
+    /\bwhat\b.*\b(station|listen)/.test(t) ||
+    /\bwhich station/.test(t)
+  );
+}
+
+function extractPlayTarget(text) {
+  const match = text.match(
+    /(?:^|\b)(?:play|listen to|start|tune in to|put on|switch to|open)\s+(.+)/i
+  );
+  if (match) {
+    return match[1].trim();
+  }
+  if (!text.includes(' ') && text.length >= 2 && text.length <= 24) {
+    return text.trim();
+  }
+  return '';
+}
+
 function audioPlayResponse(handlerInput, station) {
   const token = `station-${station.code}`;
   const attributes = handlerInput.attributesManager.getSessionAttributes();
@@ -189,28 +242,7 @@ const PlayStationIntentHandler = {
       (slots.StationName && slots.StationName.value) ||
       (slots.StationQuery && slots.StationQuery.value) ||
       '';
-    if (!spoken) {
-      return handlerInput.responseBuilder
-        .speak('Which station should I play?')
-        .reprompt('Try saying play and the station name.')
-        .getResponse();
-    }
-    try {
-      const stations = await fetchStations();
-      const station = findStation(stations, spoken);
-      if (!station) {
-        return handlerInput.responseBuilder
-          .speak(`I could not find a station matching ${spoken}. Say list stations to hear options.`)
-          .reprompt('Which station would you like?')
-          .getResponse();
-      }
-      return audioPlayResponse(handlerInput, station);
-    } catch (err) {
-      console.error(err);
-      return handlerInput.responseBuilder
-        .speak('Something went wrong starting playback. Please try again.')
-        .getResponse();
-    }
+    return handlePlayStationByName(handlerInput, spoken);
   },
 };
 
@@ -387,10 +419,37 @@ const FallbackIntentHandler = {
       getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent'
     );
   },
-  handle(handlerInput) {
+  async handle(handlerInput) {
+    const transcript = (
+      handlerInput.requestEnvelope.request.inputTranscript || ''
+    ).trim();
+    console.log('Fallback transcript:', transcript);
+
+    if (!transcript) {
+      return handlerInput.responseBuilder
+        .speak(
+          'Try list stations, or say play followed by a station name or code.'
+        )
+        .reprompt('Which station would you like to hear?')
+        .getResponse();
+    }
+
+    if (looksLikeListStations(transcript)) {
+      return ListStationsIntentHandler.handle(handlerInput);
+    }
+
+    if (/\bwhat is playing\b|\bwhat song\b|\bwhat is on now\b/i.test(transcript)) {
+      return WhatsPlayingIntentHandler.handle(handlerInput);
+    }
+
+    const playTarget = extractPlayTarget(transcript);
+    if (playTarget) {
+      return handlePlayStationByName(handlerInput, playTarget);
+    }
+
     return handlerInput.responseBuilder
       .speak(
-        'Sorry, I did not catch that. Say list stations, or play and a station name.'
+        `I heard ${transcript}. Try list stations, or say play and the station code.`
       )
       .reprompt('Which station would you like to hear?')
       .getResponse();
