@@ -328,7 +328,87 @@ const AudioPlayerEventHandler = {
     );
   },
   handle(handlerInput) {
+    const type = getRequestType(handlerInput.requestEnvelope);
+    const req = handlerInput.requestEnvelope.request;
+    if (type === 'AudioPlayer.PlaybackFailed') {
+      console.error('PlaybackFailed', req.error);
+    }
     return handlerInput.responseBuilder.getResponse();
+  },
+};
+
+const PlaybackControllerHandler = {
+  canHandle(handlerInput) {
+    return getRequestType(handlerInput.requestEnvelope).startsWith(
+      'PlaybackController.'
+    );
+  },
+  handle(handlerInput) {
+    const type = getRequestType(handlerInput.requestEnvelope);
+    const response = handlerInput.responseBuilder;
+    const attrs = handlerInput.attributesManager.getSessionAttributes();
+    if (type === 'PlaybackController.PauseCommandIssued') {
+      return response.addAudioPlayerStopDirective().getResponse();
+    }
+    if (
+      type === 'PlaybackController.PlayCommandIssued' &&
+      attrs.playingStreamUrl
+    ) {
+      return response
+        .addAudioPlayerPlayDirective(
+          'REPLACE_ALL',
+          attrs.playingStreamUrl,
+          `station-${attrs.playingStationCode || 'resume'}`,
+          undefined,
+          0
+        )
+        .getResponse();
+    }
+    return response.getResponse();
+  },
+};
+
+const NavigateHomeIntentHandler = {
+  canHandle(handlerInput) {
+    return (
+      getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NavigateHomeIntent'
+    );
+  },
+  handle(handlerInput) {
+    return LaunchRequestHandler.handle(handlerInput);
+  },
+};
+
+const FallbackIntentHandler = {
+  canHandle(handlerInput) {
+    return (
+      getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent'
+    );
+  },
+  handle(handlerInput) {
+    return handlerInput.responseBuilder
+      .speak(
+        'Sorry, I did not catch that. Say list stations, or play and a station name.'
+      )
+      .reprompt('Which station would you like to hear?')
+      .getResponse();
+  },
+};
+
+/** Must stay after specific IntentRequest handlers. */
+const UnhandledIntentHandler = {
+  canHandle(handlerInput) {
+    return getRequestType(handlerInput.requestEnvelope) === 'IntentRequest';
+  },
+  handle(handlerInput) {
+    const name = getIntentName(handlerInput.requestEnvelope);
+    console.log('Unhandled intent:', name);
+    return handlerInput.responseBuilder
+      .speak('I am not sure how to help with that yet. Try list stations or play a station name.')
+      .reprompt('What would you like to listen to?')
+      .getResponse();
   },
 };
 
@@ -363,7 +443,11 @@ exports.handler = Alexa.SkillBuilders.custom()
     HelpIntentHandler,
     StopCancelIntentHandler,
     PauseResumeIntentHandler,
+    NavigateHomeIntentHandler,
+    FallbackIntentHandler,
     AudioPlayerEventHandler,
+    PlaybackControllerHandler,
+    UnhandledIntentHandler,
     SessionEndedRequestHandler
   )
   .addErrorHandlers(ErrorHandler)
