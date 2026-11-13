@@ -1,0 +1,66 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "urself radio",
+      "intents": [
+        {
+          "name": "ListStationsIntent",
+          "samples": [
+            "list stations",
+            "what stations are on",
+            "which stations are live",
+            "show stations"
+          ]
+        },
+        {
+          "name": "PlayStationIntent",
+          "slots": [
+            {
+              "name": "StationName",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "play {StationName}",
+            "listen to {StationName}",
+            "start {StationName}",
+            "tune in to {StationName}"
+          ]
+        },
+        {
+          "name": "WhatsPlayingIntent",
+          "samples": [
+            "what is playing",
+            "what song is this",
+            "what is on now"
+          ]
+        },
+        {
+          "name": "AMAZON.PauseIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ResumeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        }
+      ],
+      "types": []
+    }
+  }
+}

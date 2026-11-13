@@ -1,0 +1,37 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "summary": "Listen to Broadcast Urself internet radio stations.",
+          "examplePhrases": [
+            "Alexa, open urself radio",
+            "Alexa, ask urself radio to list stations",
+            "Alexa, ask urself radio to play a station"
+          ],
+          "keywords": [
+            "radio",
+            "music",
+            "broadcast",
+            "stream"
+          ],
+          "name": "Broadcast Urself",
+          "description": "Play live stations from the Broadcast Urself network. List stations, start playback, and hear what is on now."
+        }
+      },
+      "isAvailableWorldwide": true,
+      "testingInstructions": "Enable the skill in test. Say open urself radio, list stations, then play a known live station code or name. Verify stop ends audio.",
+      "category": "MUSIC_AND_AUDIO"
+    },
+    "apis": {
+      "custom": {
+        "interfaces": [
+          {
+            "type": "AUDIO_PLAYER"
+          }
+        ]
+      }
+    },
+    "manifestVersion": "1.0"
+  }
+}
